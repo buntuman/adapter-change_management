@@ -59,9 +59,6 @@ class ServiceNowAdapter extends EventEmitter {
     // Copy arguments' values to object properties.
     this.id = id;
     this.props = adapterProperties;
-
-    //un-needed properties that should be excluded
-    this.required = ["number","active","priority","description","work_start","work_end,sys_id"];
     // Instantiate an object from the connector.js module and assign it to an object property.
     this.connector = new ServiceNowConnector({
       url: this.props.url,
@@ -194,43 +191,7 @@ healthcheck(callback) {
      * Note how the object was instantiated in the constructor().
      * get() takes a callback function.
      */
-     this.connector.get((data,error) => {
-         // check to see if the 'data' is an objet
-         if(typeof data === 'object' && data !== null){
-            //check if the it includes key 'body'
-            if('body' in data){
-                // if it does, the key's value is a json encoded string
-                //extract value and convert to json object
-                let jsonData = JSON.parse(data['body']);
-                // the newly acquired object has a single key, 'result' whose 
-                // value is an array of objects
-                let result = jsonData.result;
-                // for each object in array, remove all properties but "number,active,priority,description,work_start,work_end,sys_id"
-                result.forEach((ticket) => {
-                    let keys = Object.keys(ticket);
-                    keys.forEach((key,index) => {
-                        if(! key in this.required){
-                            delete ticket[key];
-                        }
-                        if(key === "number"){
-                            ticket['change_ticket_number'] = ticket.key;
-                            delete ticket.key;
-                        }
-
-                        if(key === "sys_id"){
-                            ticket['change_ticket_key'] = ticket.key;
-                            delete ticket.key;
-                        }
-                    });
-                });
-                    //rename key 'number' to 'change_ticket_key'
-
-                //return array of objects 
-            }
-         }
-        return callback(data,error);
-     
-     });
+     this.connector.get((data,error) => callback(data,error));
   }
 
   /**
@@ -249,44 +210,7 @@ healthcheck(callback) {
      * Note how the object was instantiated in the constructor().
      * post() takes a callback function.
      */
-
-     
-     this.connector.post(this.props,(data,error) =>  { 
-         
-         // check to see if the 'data' is an objet
-         if(typeof data === 'object' && data !== null){
-            //check if the it includes key 'body'
-            if('body' in data){
-                // if it does, the key's value is a json encoded string
-                //extract value and convert to json object
-                let jsonData = JSON.parse(data['body']);
-                // the newly acquired object has a single key, 'result' whose 
-                // value is an array of objects
-                let result = jsonData.result;
-                // remove unwanted keys
-                    let keys = Object.keys(result);
-                    keys.forEach((key,index) => {
-                        if(! key in this.required){
-                            delete result[key];
-                        }
-                        if(key === "number"){
-                            result['change_ticket_number'] = result.key;
-                            delete result.key;
-                        }
-
-                        if(key === "sys_id"){
-                            result['change_ticket_key'] = result.key;
-                            delete result.key;
-                        }
-                    });
-        
-                    //rename key 'number' to 'change_ticket_key'
-
-                //return array of objects 
-            }
-         }
-         return callback(result,error);
-         });
+     this.connector.post(this.props,(data,error) => callback(data,error));
   }
 }
 
