@@ -61,7 +61,7 @@ class ServiceNowAdapter extends EventEmitter {
     this.props = adapterProperties;
 
     //un-needed properties that should be excluded
-    this.required = ["number","active","priority","description","work_start","work_end,sys_id"];
+    this.required = ["number","active","priority","description","work_start","work_end","sys_id"];
     // Instantiate an object from the connector.js module and assign it to an object property.
     this.connector = new ServiceNowConnector({
       url: this.props.url,
@@ -194,6 +194,7 @@ healthcheck(callback) {
      * Note how the object was instantiated in the constructor().
      * get() takes a callback function.
      */
+     let result;
      this.connector.get((data,error) => {
          // check to see if the 'data' is an objet
          if(typeof data === 'object' && data !== null){
@@ -204,31 +205,30 @@ healthcheck(callback) {
                 let jsonData = JSON.parse(data['body']);
                 // the newly acquired object has a single key, 'result' whose 
                 // value is an array of objects
-                let result = jsonData.result;
+                result = jsonData.result;
                 // for each object in array, remove all properties but "number,active,priority,description,work_start,work_end,sys_id"
-                result.forEach((ticket) => {
+                result.forEach((ticket,position) => {
                     let keys = Object.keys(ticket);
                     keys.forEach((key,index) => {
-                        if(! key in this.required){
+                        if(!this.required.includes(key)){
                             delete ticket[key];
                         }
                         if(key === "number"){
-                            ticket['change_ticket_number'] = ticket.key;
-                            delete ticket.key;
+                            Object.assign(ticket,{"change_ticket_number" : ticket[key] });
+                            //result[position]['change_ticket_number'] = ticket[key];
+                            delete ticket[key];
                         }
 
                         if(key === "sys_id"){
-                            ticket['change_ticket_key'] = ticket.key;
-                            delete ticket.key;
+                             Object.assign(ticket,{"change_ticket_key": ticket[key]});
+                            delete ticket[key];
                         }
                     });
                 });
-                    //rename key 'number' to 'change_ticket_key'
 
-                //return array of objects 
             }
          }
-        return callback(data,error);
+        return callback(result,error);
      
      });
   }
@@ -249,7 +249,7 @@ healthcheck(callback) {
      * Note how the object was instantiated in the constructor().
      * post() takes a callback function.
      */
-
+    let result;
      
      this.connector.post(this.props,(data,error) =>  { 
          
@@ -262,27 +262,25 @@ healthcheck(callback) {
                 let jsonData = JSON.parse(data['body']);
                 // the newly acquired object has a single key, 'result' whose 
                 // value is an array of objects
-                let result = jsonData.result;
+                result = jsonData.result;
                 // remove unwanted keys
                     let keys = Object.keys(result);
                     keys.forEach((key,index) => {
-                        if(! key in this.required){
+                        if(!this.required.includes(key)){
                             delete result[key];
                         }
-                        if(key === "number"){
-                            result['change_ticket_number'] = result.key;
-                            delete result.key;
+                       if(key === "number"){
+                            Object.assign(result,{"change_ticket_number" : result[key] });
+                            //result[position]['change_ticket_number'] = ticket[key];
+                            delete result[key];
                         }
 
                         if(key === "sys_id"){
-                            result['change_ticket_key'] = result.key;
-                            delete result.key;
+                             Object.assign(result,{"change_ticket_key": result[key]});
+                            delete result[key];
                         }
                     });
         
-                    //rename key 'number' to 'change_ticket_key'
-
-                //return array of objects 
             }
          }
          return callback(result,error);
